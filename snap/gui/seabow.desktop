@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Seabow
+Type=Application
+Category=Developpment
+Comment=Seabow Programming Language 
+Exec=seabow 
+Icon=seabow 
+Terminal=true

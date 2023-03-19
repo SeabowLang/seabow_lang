@@ -1,0 +1,37 @@
+name: seabow
+title: Seabow
+summary: A compiler for the new programming language Seabow.
+description: |
+  Seabow language is an alternative of C++ which support platform-independent bytecode for Linux, MacOS and Windows.
+  It also support a much more understable syntax than C or C++, a plainfull support of OOP with operator 'is'.
+  It provides new operators such as 'is', 'in', 'as'.
+  It had the support of UTF-8 with multi-byte characters.
+type: app
+icon: "snap/gui/seabow.png"
+license: GPL-3.0+
+
+contact: jonnard.lucas@gmail.com
+
+version: "0.1.0"
+confinement: strict
+base: core22
+grade: stable
+
+parts:
+  seabow:
+    plugin: make
+    source: .
+    build-packages:
+      - g++
+
+apps:
+  seabow:
+    command: seabow
+    desktop: snap/gui/seabow.desktop
+    environment:
+      DISABLE_WAYLAND: '1'
+      LD_LIBRARY_PATH: $SNAP/lib/x86_64-linux-gnu
+    plugs: 
+      - home
+      - desktop
+      - desktop-legacy

@@ -1,0 +1,31 @@
+include (cos, sin, tan, PI) from maths as mt;
+import (cnst, fnt) from other;
+
+int main(list args)
+{
+    for (ubyte i=0; i<10; i++)
+        print(i);
+    
+    ulong j = cnst;
+    char k = fnt(j)
+    string l = null;
+    string utf = "é£µあかさ";
+
+    try (err) {
+        ldouble p = 13
+    } catch (SyntaxError) {
+        print("Erreur de syntaxe détectée");
+    }
+
+    return ?(j) : 0 : 1;
+}
+
+/*
+This function do something
+Maybe ?....
+*/
+void something()
+{
+    // Just do something
+    return;
+}
