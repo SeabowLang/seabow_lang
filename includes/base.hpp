@@ -14,13 +14,14 @@
 #include <iostream>
 
 #ifdef _WIN32
+    #include <windows.h>
     #include <io.h>
     #include <fcntl.h>
-    #define SEABOW_OS L"windows"
+    #define SEABOW_OS "windows"
 #elif __APPLE__
-    #define SEABOW_OS L"macos"
+    #define SEABOW_OS "macos"
 #else
-    #define SEABOW_OS L"linux"
+    #define SEABOW_OS "linux"
 #endif
 
 // Seabow types
@@ -39,7 +40,5 @@ typedef long double         sbw_ldouble;
 typedef signed char         sbw_bool;
 typedef wchar_t             sbw_char;
 typedef std::wstring        sbw_string;
-
-#define POWER_PRECISION (sbw_ldouble)1e-10
 
 #endif // __SEABOW_BASE_HPP__

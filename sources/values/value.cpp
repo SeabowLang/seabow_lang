@@ -80,25 +80,28 @@ SBW_Value *SBW_Value::AutoConvert(sbw_value_type dest_type) { return this->AutoC
 
 SBW_Value *SBW_Value::OpError(sbw_string op)
 {
-    sbw_string details = L"Operator '" + op + L"' is not defined for type <" + GetStringType(this->Type()) + L">";
+    sbw_string details = L"Operator '"; details += op; details += L"' is not defined for type <"; details += GetStringType(this->Type());
+    details += L">";
     return new SBW_ValueError(L"OperatorError", details, 0, 0);
 }
 
 SBW_Value *SBW_Value::OpError(sbw_string op, sbw_value_type t)
 {
-    sbw_string details = L"Operator '" + op + L"' is not defined for types <" + GetStringType(this->Type()) + L"> and <" + GetStringType(t) + L">";
+    sbw_string details = L"Operator '"; details += op; details += L"' is not defined for types <"; details += GetStringType(this->Type());
+    details += L"> and <"; details += GetStringType(t); details += L">";
     return new SBW_ValueError(L"OperatorError", details, 0, 0);
 }
 
 SBW_Value *SBW_Value::OpWithNullError(sbw_string op)
 {
-    sbw_string details = L"Cannot use operator '" + op + L"' with null value";
+    sbw_string details = L"Cannot use operator '"; details += op; details += L"' with null value";
     return new SBW_ValueError(L"OperatorError", details, 0, 0);
 }
 
 SBW_Value *SBW_Value::ConvertionError(sbw_value_type t)
 {
-    sbw_string details = L"Cannot convert from type <" + GetStringType(this->Type()) + L"> to type <" + GetStringType(t) + L">";
+    sbw_string details = L"Cannot convert from type <"; details += GetStringType(this->Type()); details += L"> to type <";
+    details += GetStringType(t); details += L">";
     return new SBW_ValueError(L"ConvertionError", details, 0, 0);
 }
 

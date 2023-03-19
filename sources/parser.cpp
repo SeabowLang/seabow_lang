@@ -111,7 +111,7 @@ SBW_Node *SBW_Parser::ParseStatement(sbw_bool is_stat)
         {
             sbw_ulong line = this->Get()->Line();
             sbw_ulong column = this->Advance()->Column();
-            node = new SBW_NodeLitteral(line, column, new SBW_ValueNull());
+            node = new SBW_NodeLiteral(line, column, new SBW_ValueNull());
         }
         else if (current->Text() == L"return")
             node = this->ParseReturn();
@@ -151,18 +151,8 @@ SBW_Node *SBW_Parser::ParseStatement(sbw_bool is_stat)
     if (!node)
         return new SBW_NodeBad(current->Line(), current->Column(), new SBW_ValueError(L"SyntaxError", L"Invalid statement", current->Line(), current->Column()));
 
-    if (is_stat)
-    {
-        if (this->Get()->Type() != TT_SEMI && this->Get()->Type() != TT_RBRACE)
-        {
-            SBW_Token *old = this->Get(-1);
-            sbw_ulong col = old->Column() + old->Text().length() + 1;
-            if (old->Type() == TT_CHAR || old->Type() == TT_STRING) col++;
-            return new SBW_NodeBad(old->Line(), col, new SBW_ValueError(L"SyntaxError", L"Expected ';'", old->Line(), col));
-        }
-
+    if (is_stat && this->Get()->Type() == TT_SEMI)
         this->Advance();
-    }
 
     return node;
 }
@@ -807,23 +797,23 @@ SBW_Node *SBW_Parser::ParsePrimaryExpression(sbw_none)
         }
 
         case TT_INTEGER: {
-            return new SBW_NodeLitteral(line, column, new SBW_ValueUlong(wcstoull(this->Advance()->Text().c_str(), NULL, 10)));
+            return new SBW_NodeLiteral(line, column, new SBW_ValueUlong(wcstoull(this->Advance()->Text().c_str(), NULL, 10)));
         }
 
         case TT_DECIMAL: {
-            return new SBW_NodeLitteral(line, column, new SBW_ValueLdouble(wcstold(this->Advance()->Text().c_str(), NULL)));
+            return new SBW_NodeLiteral(line, column, new SBW_ValueLdouble(wcstold(this->Advance()->Text().c_str(), NULL)));
         }
 
         case TT_CHAR: {
-            return new SBW_NodeLitteral(line, column, new SBW_ValueCharacter(this->Advance()->Text()[0]));
+            return new SBW_NodeLiteral(line, column, new SBW_ValueCharacter(this->Advance()->Text()[0]));
         }
 
         case TT_STRING: {
-            return new SBW_NodeLitteral(line, column, new SBW_ValueString(this->Advance()->Text()));
+            return new SBW_NodeLiteral(line, column, new SBW_ValueString(this->Advance()->Text()));
         }
 
         case TT_BOOLEAN: {
-            return new SBW_NodeLitteral(line, column, new SBW_ValueBoolean(this->Advance()->Text() == L"true"));
+            return new SBW_NodeLiteral(line, column, new SBW_ValueBoolean(this->Advance()->Text() == L"true"));
         }
 
         case TT_BAD: {

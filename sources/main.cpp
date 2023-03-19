@@ -6,10 +6,14 @@ int main(int argc, char **argv)
 {
 #ifndef _WIN32
     setlocale(LC_ALL, "");
-    setlocale(LC_NUMERIC, "en_US.UTF-8");
+    setlocale(LC_NUMERIC, "en_US.UTF-8"); // Use '.' for decimal numbers
 #else
-    _setmode(_fileno(stdin), _O_WTEXT);
+    SetConsoleOutputCP(CP_UTF8);
+    SetConsoleCP(CP_UTF8);
+
+    _setmode(_fileno(stdin), _O_U8TEXT);
 #endif
+
     if (argc <= 1) 
     {
         SBW_Interpreter *interpreter = new SBW_Interpreter();
@@ -19,7 +23,7 @@ int main(int argc, char **argv)
     }
     else
     {
-        FILE *file = fopen64(argv[1], "r,ccs=UNICODE");
+        FILE *file = fopen64(argv[1], "r,ccs=UTF-8");
         sbw_string code;
         if (file != nullptr)
         {
@@ -38,7 +42,7 @@ int main(int argc, char **argv)
             return -1;
         }
 
-        std::wcout << code << L"\n";
+        wprintf(L"%ls\n", code.c_str());
         SBW_Parser *parser = new SBW_Parser(code);
 
         SBW_Node *nd = parser->Parse();
@@ -48,7 +52,7 @@ int main(int argc, char **argv)
         else
         {
             SBW_NodeBad *err = (SBW_NodeBad*)nd;
-            std::wcout << L"NODE BAD => " << ((SBW_ValueString*)err->Err()->operator_convert(VT_STRING_))->Get() << L"\n";
+            wprintf(L"NODE BAD => %ls\n", ((SBW_ValueString*)err->Err()->operator_convert(VT_STRING_))->Get().c_str());
         }
 
         delete nd;
@@ -64,10 +68,10 @@ void show_compound_infos(std::vector<SBW_Node*> nodes)
         SBW_Node *node = *nodes.begin().base();
         if (node->Type() == NT_BAD) {
             SBW_NodeBad *err = (SBW_NodeBad*)node;
-            std::wcout << L"NODE BAD => " << ((SBW_ValueString*)err->Err()->operator_convert(VT_STRING_))->Get() << L"\n";
+            wprintf(L"NODE BAD => %ls\n", ((SBW_ValueString*)err->Err()->operator_convert(VT_STRING_))->Get().c_str());
         }
         else {
-            std::wcout << L"NODE{" << node->Type() << L"} (l: " << node->Line() << L", c: " << node->Column() << L")\n";
+            wprintf(L"NODE{%u} (l: %lu, c: %lu)\n", node->Type(), node->Line(), node->Column());
             if (node->Type() == NT_COMPOUND)
                 show_compound_infos(((SBW_NodeCompound*)node)->Statements());
             else if (node->Type() == NT_FUNCTION_DECLARATION) {
