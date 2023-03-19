@@ -1128,7 +1128,7 @@ SBW_Value *SBW_ValueCharacter::operator_convert(sbw_value_type dest_type)
             case VT_CHARACTER_: return new SBW_ValueCharacter(*this->value);
             case VT_STRING_: {
                 if (this->value) {
-                    return new SBW_ValueString(L"" + *this->value);
+                    return new SBW_ValueString(std::to_wstring(*this->value));
                 } else return new SBW_ValueString(L"null");
             }
             case VT_TYPE_: {}

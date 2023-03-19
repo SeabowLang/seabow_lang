@@ -12,8 +12,7 @@ sbw_ubyte GetUnaryPrecedence(sbw_token_type t)
         case TT_TILDE:
         case TT_PLUS:
         case TT_MINUS:
-        case TT_AMP: // Get address
-        case TT_DOLLAR: // Get value of
+        case TT_DOLLAR:
             return 15;
         
         case TT_QUEST:

@@ -901,7 +901,9 @@ SBW_Value *SBW_ValueDouble::operator_convert(sbw_value_type dest_type)
             case VT_CHARACTER_: return new SBW_ValueCharacter(*this->value);
             case VT_STRING_: {
                 if (this->value) {
-                    return new SBW_ValueString(std::to_wstring(*this->value));
+                    std::wstringstream stream;
+                    stream << std::fixed << std::setprecision(17) << *this->value;
+                    return new SBW_ValueString(stream.str());
                 } else return new SBW_ValueString(L"null");
             }
             case VT_TYPE_: {}

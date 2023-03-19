@@ -3,6 +3,8 @@
 
 #include "parser.hpp"
 
+#define UNASSIGNABLE_ERROR  0xff
+
 class SBW_Variable 
 {
 public:
@@ -40,6 +42,9 @@ private:
 
     SBW_Variable *InterpretLiteral(SBW_Node *node);
     SBW_Variable *InterpretParenthesized(SBW_Node *node);
+
+    SBW_Variable *InterpretBinaryExpression(SBW_Node *node);
+    SBW_Variable *InterpretUnaryExpression(SBW_Node *node);
 };
 
 #endif // __SEABOW_INTERPRETER_HPP__

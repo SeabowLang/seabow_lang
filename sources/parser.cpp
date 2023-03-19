@@ -320,15 +320,10 @@ SBW_Node *SBW_Parser::ParseVariableAssignment(sbw_none)
     sbw_ulong column = this->Get()->Column();
     sbw_string name = this->Advance()->Text();
     sbw_token_type eq_type = this->Get()->Type();
-    switch (eq_type)
-    {
-        case TT_EQ: case TT_PLUSEQ: case TT_MINUSEQ: case TT_STAREQ: case TT_SLASHEQ:
-        case TT_POWEREQ: case TT_PERCENTEQ: case TT_LSHIFTEQ: case TT_RSHIFTEQ: case TT_HATEQ:
-        case TT_AMPEQ: case TT_PIPEEQ:
-            this->Advance(); break;
-
-        default: return this->Match(TT_EQ, L"equals character");
-    }
+    if (eq_type == TT_EQ)
+        this->Advance();
+    else
+        return this->Match(TT_EQ, L"equals character");
 
     SBW_Node *value = this->ParseStatement(false);
     if (value->Type() == NT_BAD)
@@ -765,7 +760,7 @@ SBW_Node *SBW_Parser::ParseBinaryUnaryExpression(sbw_ubyte parent_precedence)
         
         sbw_token_type op_type = this->Advance()->Type();
         if (binary_precedence == 17)
-            return new SBW_NodeUnary(line, column, left, op_type);
+            return new SBW_NodeBinary(line, column, left, (SBW_Node*)0, op_type);
         
         SBW_Node *right = this->ParseBinaryUnaryExpression(binary_precedence);
         if (right->Type() == NT_BAD)
