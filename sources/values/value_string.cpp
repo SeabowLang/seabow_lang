@@ -1072,6 +1072,7 @@ SBW_Value *SBW_ValueString::operator_convert(sbw_value_type dest_type)
         {
             case VT_BOOLEAN_: return new SBW_ValueBoolean(this->value.size() > 0);
             case VT_STRING_: return new SBW_ValueString(this->value);
+            case VT_TYPE_: return new SBW_ValueType(VT_STRING_);
 
             case VT_ANY_: return new SBW_ValueAny(new SBW_ValueString(this->value));
             default: return this->ConvertionError(dest_type);
@@ -1083,6 +1084,7 @@ SBW_Value *SBW_ValueString::operator_convert(sbw_value_type dest_type)
         {
             case VT_BOOLEAN_: return new SBW_ValueBoolean((sbw_bool*)0);
             case VT_STRING_: return new SBW_ValueString();
+            case VT_TYPE_: return new SBW_ValueType(VT_STRING_);
 
             case VT_ANY_: return new SBW_ValueAny(new SBW_ValueNull());
             default: return this->ConvertionError(dest_type);

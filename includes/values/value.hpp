@@ -14,11 +14,13 @@ enum sbw_value_type: sbw_ubyte {
 
     VT_ARRAY_ = 0x20, VT_LIST_ = 0x21, VT_DICT_ = 0x22,
 
+    VT_TYPE_ = 0x28, VT_POINTER_ = 0x29,
+
     VT_ENUMERATION_ = 0x30, VT_STRUCTURE_ = 0x31, VT_CLASS_ = 0x32,
 
     VT_FUNCTION_ = 0x40,
 
-    VT_ERROR_ = 0x50, VT_TYPE_ = 0x51, VT_POINTER_ = 0x52
+    VT_ERROR_ = 0x50
 };
 const sbw_value_type GetKeywordType(sbw_string keyword);
 const sbw_string GetStringType(sbw_value_type t);

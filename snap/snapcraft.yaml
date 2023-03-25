@@ -31,6 +31,7 @@ apps:
     environment:
       DISABLE_WAYLAND: '1'
       LD_LIBRARY_PATH: $SNAP/lib/x86_64-linux-gnu
+      LC_ALL: C.UTF-8
     plugs: 
       - home
       - desktop

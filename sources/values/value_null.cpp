@@ -43,6 +43,7 @@ SBW_Value *SBW_ValueNull::operator_convert(sbw_value_type dest_type)
         case VT_STRING_: return new SBW_ValueString();
         case VT_ERROR_: return new SBW_ValueError(L"", L"", 0, 0);
         case VT_POINTER_: return new SBW_ValuePointer((sbw_none*)0, VT_NULL_);
+        case VT_TYPE_: return new SBW_ValueType(VT_NULL_);
 
         case VT_ANY_: return new SBW_ValueAny(new SBW_ValueNull());
         default: return this->ConvertionError(dest_type);

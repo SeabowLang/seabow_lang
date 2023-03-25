@@ -45,6 +45,7 @@ private:
 
     SBW_Variable *InterpretBinaryExpression(SBW_Node *node);
     SBW_Variable *InterpretUnaryExpression(SBW_Node *node);
+    SBW_Variable *InterpretConvertExpression(SBW_Node *node);
 };
 
 #endif // __SEABOW_INTERPRETER_HPP__

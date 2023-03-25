@@ -35,13 +35,14 @@ SBW_Interpreter::~SBW_Interpreter()
 
 sbw_none SBW_Interpreter::Perform(sbw_none)
 {
-    wprintf(L"Seabow %u.%u.%u (on %s)\nType '#h' for helps, '#q' to quit seabow interpreter, '#l' to list all seabow elements, '#c' to clear the screen\n", SEABOW_MAJOR, SEABOW_MINOR, SEABOW_PATCH, SEABOW_OS);
+    wprintf(L"Seabow %u.%u.%u (on %s)\nType '#h' for helps, '#q' to quit seabow interpreter, '#l' to list all seabow modules installed, '#c' to clear the screen\n", SEABOW_MAJOR, SEABOW_MINOR, SEABOW_PATCH, SEABOW_OS);
 
     while (true)
     {
         wprintf((this->statement) ? L"... " : L">>> ");
         sbw_string code;
         std::getline(std::wcin, code);
+        
         if (code[0] == L'\n')
             code.erase(0);
 
@@ -50,11 +51,13 @@ sbw_none SBW_Interpreter::Perform(sbw_none)
             if (code == L"#q")
                 return;
             else if (code == L"#h")
-                wprintf(L"Welcome to Seabow helps!\n");
+                wprintf(L"Welcome to Seabow helps!\n\tCompiler: seabow cmp <main_file> <other_arguments>\nThis will compile seabow files (.sbw) to seabow bytecode files (.sbb).\n\n\tInterpreter: seabow <other_arguments>\nThis will open seabow interpreter in your terminal.\n\n\tVirtual Machine: seabow run <bytecode_file> <other_arguments>\nThis will interpret bytecode and perform it.\n\n/!\\ <other_arguments>: All seabow command arguments like: -opt, -o, -cmt, ...\n/!\\ <main_file>: seabow file (.sbw) that contains main function.\n/!\\ <bytecode_file>: seabow bytecode file (.sbb) to perform.\n");
             else if (code == L"#c")
                 wprintf(L"\033[2J\033[H");
-            else if (code == L"#l")
-                {}
+            else if (code == L"#l") {
+                wprintf(L"List of all seabow modules installed:\n");
+                wprintf(L"\nTotal: 0\n");
+            }
             else
                 wprintf(L"\033[31mInterpreterError: '%ls' is not a special command.\033[0m\n", code.c_str());
         }
@@ -97,6 +100,7 @@ SBW_Variable *SBW_Interpreter::InterpretNode(SBW_Node *node)
 
         case NT_BINARY_EXPR: return this->InterpretBinaryExpression(node);
         case NT_UNARY_EXPR: return this->InterpretUnaryExpression(node);
+        case NT_CONVERT_EXPR: return this->InterpretConvertExpression(node);
 
         default: return new SBW_Variable(new SBW_ValueError(L"RuntimeError", L"Incorrect statement found", node->Line(), node->Column()), UNASSIGNABLE_ERROR);
     }
@@ -127,17 +131,23 @@ SBW_Variable *SBW_Interpreter::InterpretVarDecl(SBW_Node *node)
     if (vd->Value())
     {
         SBW_Variable *conv = this->InterpretNode(vd->Value());
-        if (conv->Value()->Type() == VT_UNDEFINED_)
+        if (conv->Value()->Type() == VT_ERROR_ && conv->Modifier() == UNASSIGNABLE_ERROR)
+            return conv;
+        else if (conv->Value()->Type() == VT_UNDEFINED_)
         {
             delete conv;
             SBW_Value *null_value = new SBW_ValueNull();
             this->data[vd->Name()] = new SBW_Variable(null_value->AutoConvert(vd->VType()), 0);
             delete null_value;
         }
-        else if (conv->Value()->Type() == VT_ERROR_ && conv->Modifier() == UNASSIGNABLE_ERROR)
-            return conv;
         else
-            this->data[vd->Name()] = new SBW_Variable(conv->Value()->AutoConvert(vd->VType()), 0);
+        {
+            SBW_Value *val_conv = conv->Value()->AutoConvert(vd->VType());
+            if (val_conv->Type() == VT_ERROR_)
+                return new SBW_Variable(val_conv, UNASSIGNABLE_ERROR);
+
+            this->data[vd->Name()] = new SBW_Variable(val_conv, 0);
+        }
     }
     else
     {
@@ -182,7 +192,7 @@ SBW_Variable *SBW_Interpreter::InterpretBinaryExpression(SBW_Node *node)
             return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, 0);
         }
         case TT_PLUSEQ: {
-            SBW_Value *v = ((*left->Value()) += right->Value());
+            SBW_Value *v = left->Value()->operator+=(right->Value());
             return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, 0);
         }
         case TT_PLUSPLUS: {
@@ -350,4 +360,15 @@ SBW_Variable *SBW_Interpreter::InterpretUnaryExpression(SBW_Node *node)
 
         default: return new SBW_Variable(new SBW_ValueError(L"OperatorError", L"Undefined unary operation", un->Line(), un->Column()), UNASSIGNABLE_ERROR);
     }
+}
+
+SBW_Variable *SBW_Interpreter::InterpretConvertExpression(SBW_Node *node)
+{
+    SBW_NodeConvert *nc = (SBW_NodeConvert*)node;
+    SBW_Variable *operand = this->InterpretNode(nc->Expression());
+    if (operand->Value()->Type() == VT_ERROR_ && operand->Modifier() == UNASSIGNABLE_ERROR)
+        return operand;
+    
+    SBW_Value *val = operand->Value()->operator_convert(nc->DestType());
+    return val->Type() == VT_ERROR_ ? new SBW_Variable(val, UNASSIGNABLE_ERROR) : new SBW_Variable(val, 0);
 }

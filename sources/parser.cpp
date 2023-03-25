@@ -92,7 +92,7 @@ SBW_Node *SBW_Parser::ParseStatement(sbw_bool is_stat)
         {
             if (this->Get(1)->Type() != TT_LPAR)
                 node = this->ParseDeclaration();
-            else
+            else if ((sbw_ubyte)this->Get()->Type() <= (sbw_ubyte)VT_POINTER_)
                 node = this->ParseConvertExpression();
         }
         else if (current->Text() == L"break")

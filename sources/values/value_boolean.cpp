@@ -773,12 +773,8 @@ SBW_Value *SBW_ValueBoolean::operator_convert(sbw_value_type dest_type)
             case VT_LDOUBLE_: return new SBW_ValueLdouble(*this->value);
             case VT_BOOLEAN_: return new SBW_ValueBoolean(*this->value);
             case VT_CHARACTER_: return new SBW_ValueCharacter(*this->value);
-            case VT_STRING_: {
-                if (this->value) {
-                    return new SBW_ValueString(*this->value ? L"true" : L"false");
-                } else return new SBW_ValueString(L"null");
-            }
-            case VT_TYPE_: {}
+            case VT_STRING_: return new SBW_ValueString(*this->value ? L"true" : L"false");
+            case VT_TYPE_: return new SBW_ValueType(VT_BOOLEAN_);
             case VT_POINTER_: return new SBW_ValuePointer(this, this->Type());
 
             case VT_ANY_: return new SBW_ValueAny(new SBW_ValueBoolean(*this->value));
@@ -802,12 +798,8 @@ SBW_Value *SBW_ValueBoolean::operator_convert(sbw_value_type dest_type)
             case VT_LDOUBLE_: return new SBW_ValueLdouble((sbw_ldouble*)0);
             case VT_BOOLEAN_: return new SBW_ValueBoolean((sbw_bool*)0);
             case VT_CHARACTER_: return new SBW_ValueCharacter((sbw_char*)0);
-            case VT_STRING_: {
-                if (this->value) {
-                    return new SBW_ValueString(*this->value ? L"true" : L"false");
-                } else return new SBW_ValueString(L"null");
-            }
-            case VT_TYPE_: {}
+            case VT_STRING_: return new SBW_ValueString(L"null");
+            case VT_TYPE_: return new SBW_ValueType(VT_BOOLEAN_);
             case VT_POINTER_: return new SBW_ValuePointer((sbw_none*)0, VT_NULL_);
 
             case VT_ANY_: return new SBW_ValueAny(new SBW_ValueNull());

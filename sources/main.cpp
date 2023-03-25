@@ -5,8 +5,7 @@ void show_compound_infos(std::vector<SBW_Node*> nodes);
 int main(int argc, char **argv)
 {
 #ifndef _WIN32
-    setlocale(LC_ALL, "");
-    setlocale(LC_NUMERIC, "en_US.UTF-8"); // Use '.' for decimal numbers
+    std::setlocale(LC_ALL, "C.UTF-8");
 #else
     SetConsoleOutputCP(CP_UTF8);
     SetConsoleCP(CP_UTF8);
@@ -42,7 +41,6 @@ int main(int argc, char **argv)
             return -1;
         }
 
-        wprintf(L"%ls\n", code.c_str());
         SBW_Parser *parser = new SBW_Parser(code);
 
         SBW_Node *nd = parser->Parse();

@@ -1127,11 +1127,10 @@ SBW_Value *SBW_ValueCharacter::operator_convert(sbw_value_type dest_type)
             case VT_BOOLEAN_: return new SBW_ValueBoolean(*this->value);
             case VT_CHARACTER_: return new SBW_ValueCharacter(*this->value);
             case VT_STRING_: {
-                if (this->value) {
-                    return new SBW_ValueString(std::to_wstring(*this->value));
-                } else return new SBW_ValueString(L"null");
+                sbw_string str = L"'"; str += *this->value; str += L"'";
+                return new SBW_ValueString(str);
             }
-            case VT_TYPE_: {}
+            case VT_TYPE_: return new SBW_ValueType(VT_CHARACTER_);
             case VT_POINTER_: return new SBW_ValuePointer(this, this->Type());
 
             case VT_ANY_: return new SBW_ValueAny(new SBW_ValueCharacter(*this->value));
@@ -1155,13 +1154,8 @@ SBW_Value *SBW_ValueCharacter::operator_convert(sbw_value_type dest_type)
             case VT_LDOUBLE_: return new SBW_ValueLdouble((sbw_ldouble*)0);
             case VT_BOOLEAN_: return new SBW_ValueBoolean((sbw_bool*)0);
             case VT_CHARACTER_: return new SBW_ValueCharacter((sbw_char*)0);
-            case VT_STRING_: {
-                if (this->value) {
-                    sbw_char out[4]; swprintf(out, 5, L"%d", *this->value);
-                    return new SBW_ValueString(out);
-                } else return new SBW_ValueString(L"null");
-            }
-            case VT_TYPE_: {}
+            case VT_STRING_: return new SBW_ValueString(L"null");
+            case VT_TYPE_: return new SBW_ValueType(VT_CHARACTER_);
             case VT_POINTER_: return new SBW_ValuePointer((sbw_none*)0, VT_NULL_);
 
             case VT_ANY_: return new SBW_ValueAny(new SBW_ValueNull());
