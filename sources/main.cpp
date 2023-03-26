@@ -4,16 +4,14 @@ void show_compound_infos(std::vector<SBW_Node*> nodes);
 
 int main(int argc, char **argv)
 {
-#ifndef _WIN32
-    std::setlocale(LC_ALL, "C.UTF-8");
-#else
-    SetConsoleOutputCP(CP_UTF8);
-    SetConsoleCP(CP_UTF8);
+    #ifndef _WIN32
+        std::setlocale(LC_ALL, "C.UTF-8");
+    #else
+        _setmode(_fileno(stdout), _O_U16TEXT);
+        _setmode(_fileno(stdin), _O_U16TEXT);
+    #endif
 
-    _setmode(_fileno(stdin), _O_U8TEXT);
-#endif
-
-    if (argc <= 1) 
+    if (argc <= 1 || (argv[1][0] == '-' && argv[1][1] != '-')) 
     {
         SBW_Interpreter *interpreter = new SBW_Interpreter();
         interpreter->Perform();
@@ -22,38 +20,45 @@ int main(int argc, char **argv)
     }
     else
     {
-        FILE *file = fopen64(argv[1], "r,ccs=UTF-8");
-        sbw_string code;
-        if (file != nullptr)
+        if (string_equals(argv[1], "help") || string_equals(argv[1], "--help"))
+            wprintf(SEABOW_HELPS);
+        else if (string_equals(argv[1], "license") || string_equals(argv[1], "--l"))
+            wprintf(L"GPL-3.0+\nAll releases and libraries of seabow are open source. You can find it at https://github.com/orgs/SeabowLang/repositories.\n");
+        else
         {
-            sbw_char c = fgetwc(file);
-            while (c != (sbw_char)(WEOF))
+            FILE *file = fopen64(argv[1], "r,ccs=UTF-8");
+            sbw_string code;
+            if (file != nullptr)
             {
-                code += c;
-                c = fgetwc(file);
+                sbw_char c = fgetwc(file);
+                while (c != (sbw_char)(WEOF))
+                {
+                    code += c;
+                    c = fgetwc(file);
+                }
+
+                fclose(file);
+            }
+            else
+            {
+                std::wcerr << L"No file !!!\n";
+                return -1;
             }
 
-            fclose(file);
-        }
-        else
-        {
-            std::wcerr << L"No file !!!\n";
-            return -1;
-        }
+            SBW_Parser *parser = new SBW_Parser(code);
 
-        SBW_Parser *parser = new SBW_Parser(code);
+            SBW_Node *nd = parser->Parse();
+            delete parser;
+            if (nd->Type() == NT_COMPOUND)
+                show_compound_infos(((SBW_NodeCompound*)nd)->Statements());
+            else
+            {
+                SBW_NodeBad *err = (SBW_NodeBad*)nd;
+                wprintf(L"NODE BAD => %ls\n", ((SBW_ValueString*)err->Err()->operator_convert(VT_STRING_))->Get().c_str());
+            }
 
-        SBW_Node *nd = parser->Parse();
-        delete parser;
-        if (nd->Type() == NT_COMPOUND)
-            show_compound_infos(((SBW_NodeCompound*)nd)->Statements());
-        else
-        {
-            SBW_NodeBad *err = (SBW_NodeBad*)nd;
-            wprintf(L"NODE BAD => %ls\n", ((SBW_ValueString*)err->Err()->operator_convert(VT_STRING_))->Get().c_str());
+            delete nd;
         }
-
-        delete nd;
     }
 
     return 0;

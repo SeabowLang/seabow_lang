@@ -59,7 +59,7 @@ SBW_Value *SBW_ValueUbyte::AutoConvert(sbw_value_type dest_type)
             case VT_BOOLEAN_: return new SBW_ValueBoolean((sbw_bool*)0);
             case VT_CHARACTER_: return new SBW_ValueCharacter((sbw_char*)0);
 
-            case VT_ANY_: return new SBW_ValueAny(new SBW_ValueNull());
+            case VT_ANY_: return new SBW_ValueAny(new SBW_ValueUbyte((sbw_ubyte*)0));
             default: return this->AutoConvertionError(dest_type);
         }
     }    
@@ -1155,7 +1155,7 @@ SBW_Value *SBW_ValueUbyte::operator_convert(sbw_value_type dest_type)
             case VT_TYPE_: return new SBW_ValueType(VT_UBYTE_);
             case VT_POINTER_: return new SBW_ValuePointer((sbw_none*)0, VT_NULL_);
 
-            case VT_ANY_: return new SBW_ValueAny(new SBW_ValueNull());
+            case VT_ANY_: return new SBW_ValueAny(new SBW_ValueUbyte((sbw_ubyte*)0));
             default: return this->ConvertionError(dest_type);
         }
     }

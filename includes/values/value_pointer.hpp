@@ -13,8 +13,10 @@ public:
 
     inline sbw_none *Get(sbw_none) const { return this->value; }
     inline sbw_value_type PtrType(sbw_none) const { return this->ptr_type; }
-    inline sbw_bool IsNull(sbw_none) const { return !this->value; }
-    sbw_string ToString(sbw_none) const;
+    SBW_Value *AutoConvert(sbw_value_type dest_type);
+    inline sbw_bool IsNull(sbw_none) const { return this->ptr_type == VT_NULL_; }
+    
+    SBW_Value *operator_convert(sbw_value_type dest_type);
 private:
     sbw_none *value;
     sbw_value_type ptr_type;

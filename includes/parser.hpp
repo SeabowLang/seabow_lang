@@ -31,8 +31,6 @@ private:
     SBW_Node *ParseReturn(sbw_none);
     SBW_Node *ParseConvertExpression(sbw_none);
 
-    SBW_Node *ParseVariableAssignment(sbw_none);
-
     SBW_Node *ParseIf(sbw_none);
     SBW_Node *ParseElif(sbw_none);
 

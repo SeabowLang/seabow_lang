@@ -16,7 +16,6 @@ public:
     SBW_Value *AutoConvert(sbw_value_type dest_type);
     inline sbw_bool IsNull(sbw_none) const { return this->value == VT_XXXXX_; }
     inline sbw_string More(sbw_none) const { return this->more; }
-    inline sbw_string ToString(sbw_none) const;
 
     SBW_Value *operator_convert(sbw_value_type dest_type);
 private:

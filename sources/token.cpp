@@ -4,6 +4,9 @@ sbw_ubyte GetUnaryPrecedence(sbw_token_type t)
 {
     switch (t)
     {
+        case TT_DOLLAR:
+            return 18;
+
         case TT_PLUSPLUS:
         case TT_MINUSMINUS:
             return 16; // Should be executed after the function is called
@@ -12,7 +15,6 @@ sbw_ubyte GetUnaryPrecedence(sbw_token_type t)
         case TT_TILDE:
         case TT_PLUS:
         case TT_MINUS:
-        case TT_DOLLAR:
             return 15;
         
         case TT_QUEST:

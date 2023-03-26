@@ -1,7 +1,7 @@
 #ifndef __SEABOW_VAR_CALL_HPP__
 #define __SEABOW_VAR_CALL_HPP__
 
-#include "nodes/node_varassign.hpp"
+#include "nodes/node_vardecl.hpp"
 
 class SBW_NodeVarCall: public SBW_Node
 {

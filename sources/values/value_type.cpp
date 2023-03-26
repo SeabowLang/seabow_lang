@@ -32,24 +32,10 @@ SBW_Value *SBW_ValueType::AutoConvert(sbw_value_type dest_type)
             case VT_BOOLEAN_: return new SBW_ValueBoolean((sbw_bool*)0);
             case VT_TYPE_: return new SBW_ValueType(VT_XXXXX_);
 
-            case VT_ANY_: return new SBW_ValueAny(new SBW_ValueNull());
+            case VT_ANY_: return new SBW_ValueAny(new SBW_ValueType(VT_XXXXX_));
             default: return this->AutoConvertionError(dest_type);
         }
     }
-}
-
-sbw_string SBW_ValueType::ToString(sbw_none) const
-{
-    if (this->value != VT_XXXXX_) {
-        sbw_string s = L"<" + GetStringType(this->value);
-        if (this->more.size() > 0)
-            s += L"'" + this->more + L"'";
-        
-        s += L">";
-        return s;
-    }
-    else
-        return L"null";
 }
 
 SBW_Value *SBW_ValueType::operator_convert(sbw_value_type dest_type)
@@ -80,7 +66,7 @@ SBW_Value *SBW_ValueType::operator_convert(sbw_value_type dest_type)
             case VT_STRING_: return new SBW_ValueString(L"null");
             case VT_TYPE_: return new SBW_ValueType(VT_TYPE_);
 
-            case VT_ANY_: return new SBW_ValueAny(new SBW_ValueNull());
+            case VT_ANY_: return new SBW_ValueAny(new SBW_ValueType(VT_XXXXX_));
             default: return this->ConvertionError(dest_type);
         }
     }

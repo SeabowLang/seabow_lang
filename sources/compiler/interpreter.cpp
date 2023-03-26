@@ -42,16 +42,13 @@ sbw_none SBW_Interpreter::Perform(sbw_none)
         wprintf((this->statement) ? L"... " : L">>> ");
         sbw_string code;
         std::getline(std::wcin, code);
-        
-        if (code[0] == L'\n')
-            code.erase(0);
 
         if (code[0] == L'#') // Special commands
         {
             if (code == L"#q")
                 return;
             else if (code == L"#h")
-                wprintf(L"Welcome to Seabow helps!\n\tCompiler: seabow cmp <main_file> <other_arguments>\nThis will compile seabow files (.sbw) to seabow bytecode files (.sbb).\n\n\tInterpreter: seabow <other_arguments>\nThis will open seabow interpreter in your terminal.\n\n\tVirtual Machine: seabow run <bytecode_file> <other_arguments>\nThis will interpret bytecode and perform it.\n\n/!\\ <other_arguments>: All seabow command arguments like: -opt, -o, -cmt, ...\n/!\\ <main_file>: seabow file (.sbw) that contains main function.\n/!\\ <bytecode_file>: seabow bytecode file (.sbb) to perform.\n");
+                wprintf(SEABOW_HELPS);
             else if (code == L"#c")
                 wprintf(L"\033[2J\033[H");
             else if (code == L"#l") {
@@ -74,12 +71,13 @@ sbw_none SBW_Interpreter::StartInterpreter(sbw_string code)
 
     if (root->Statements().size() != 0)
     {
-        SBW_Value *ret = (root->Statements().size() > 1) ? this->InterpretNode(root)->Value() : this->InterpretNode(root->Statements()[0])->Value();
+        SBW_Variable *ret = (root->Statements().size() > 1) ? this->InterpretNode(root) : this->InterpretNode(root->Statements()[0]);
+        SBW_Value *ret_val = ret->Value();
 
-        if (ret->Type() == VT_ERROR_)
-            wprintf(L"\033[31m%ls\033[0m\n", ((SBW_ValueString*)ret->operator_convert(VT_STRING_))->Get().c_str());
-        else if (ret->Type() != VT_UNDEFINED_)
-            wprintf(L"%ls\n", ((SBW_ValueString*)ret->operator_convert(VT_STRING_))->Get().c_str());
+        if (ret_val->Type() == VT_ERROR_)
+            wprintf(L"\033[31m%ls\033[0m\n", ((SBW_ValueString*)ret_val->operator_convert(VT_STRING_))->Get().c_str());
+        else if (ret_val->Type() != VT_UNDEFINED_ && ret->Modifier() != UNDISPLAYABLE)
+            wprintf(L"%ls\n", ((SBW_ValueString*)ret_val->operator_convert(VT_STRING_))->Get().c_str());
     }
 
     delete root;
@@ -114,7 +112,9 @@ SBW_Variable *SBW_Interpreter::InterpretCompound(SBW_Node *node)
     for (sbw_ulong i=0; i<cmp->Statements().size(); i++)
     {
         SBW_Node *nd = cmp->Statements()[i];
-        this->InterpretNode(nd);
+        SBW_Variable *v = this->InterpretNode(nd);
+        if (v->Value()->Type() == VT_ERROR_ && v->Modifier() == UNASSIGNABLE_ERROR)
+            return v;
     }
 
     return new SBW_Variable();
@@ -137,7 +137,7 @@ SBW_Variable *SBW_Interpreter::InterpretVarDecl(SBW_Node *node)
         {
             delete conv;
             SBW_Value *null_value = new SBW_ValueNull();
-            this->data[vd->Name()] = new SBW_Variable(null_value->AutoConvert(vd->VType()), 0);
+            this->data[vd->Name()] = new SBW_Variable(null_value->AutoConvert(vd->VType()), VOID_MODIFIER);
             delete null_value;
         }
         else
@@ -146,13 +146,13 @@ SBW_Variable *SBW_Interpreter::InterpretVarDecl(SBW_Node *node)
             if (val_conv->Type() == VT_ERROR_)
                 return new SBW_Variable(val_conv, UNASSIGNABLE_ERROR);
 
-            this->data[vd->Name()] = new SBW_Variable(val_conv, 0);
+            this->data[vd->Name()] = new SBW_Variable(val_conv, VOID_MODIFIER);
         }
     }
     else
     {
         SBW_Value *null_value = new SBW_ValueNull();
-        this->data[vd->Name()] = new SBW_Variable(null_value->AutoConvert(vd->VType()), 0);
+        this->data[vd->Name()] = new SBW_Variable(null_value->AutoConvert(vd->VType()), VOID_MODIFIER);
         delete null_value;
     }
 
@@ -170,7 +170,7 @@ SBW_Variable *SBW_Interpreter::InterpretVarCall(SBW_Node *node)
     return this->data[vc->Name()];
 }
 
-SBW_Variable *SBW_Interpreter::InterpretLiteral(SBW_Node *node) { return new SBW_Variable(((SBW_NodeLiteral*)node)->Value(), 0); }
+SBW_Variable *SBW_Interpreter::InterpretLiteral(SBW_Node *node) { return new SBW_Variable(((SBW_NodeLiteral*)node)->Value(), VOID_MODIFIER); }
 
 SBW_Variable *SBW_Interpreter::InterpretParenthesized(SBW_Node *node) { return this->InterpretNode(((SBW_NodeParenthesized*)node)->Expression()); }
 
@@ -181,7 +181,7 @@ SBW_Variable *SBW_Interpreter::InterpretBinaryExpression(SBW_Node *node)
     if (left->Value()->Type() == VT_ERROR_ && left->Modifier() == UNASSIGNABLE_ERROR)
         return left;
 
-    SBW_Variable *right = bn->Right() ? this->InterpretNode(bn->Right()) : new SBW_Variable(new SBW_Value(), 0);
+    SBW_Variable *right = bn->Right() ? this->InterpretNode(bn->Right()) : new SBW_Variable(new SBW_Value(), VOID_MODIFIER);
     if (right->Value()->Type() == VT_ERROR_ && right->Modifier() == UNASSIGNABLE_ERROR)
         return right;
 
@@ -189,131 +189,135 @@ SBW_Variable *SBW_Interpreter::InterpretBinaryExpression(SBW_Node *node)
     {
         case TT_PLUS: {
             SBW_Value *v = ((*left->Value()) + right->Value());
-            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, 0);
+            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, VOID_MODIFIER);
         }
         case TT_PLUSEQ: {
             SBW_Value *v = left->Value()->operator+=(right->Value());
-            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, 0);
+            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, UNDISPLAYABLE);
         }
         case TT_PLUSPLUS: {
             SBW_Value *v = (*left->Value())++;
-            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, 0);
+            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, UNDISPLAYABLE);
         }
         case TT_MINUS: {
             SBW_Value *v = ((*left->Value()) - right->Value());
-            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, 0);
+            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, VOID_MODIFIER);
         }
         case TT_MINUSEQ: {
             SBW_Value *v = ((*left->Value()) -= right->Value());
-            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, 0);
+            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, UNDISPLAYABLE);
         }
         case TT_MINUSMINUS: {
             SBW_Value *v = (*left->Value())--;
-            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, 0);
+            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, UNDISPLAYABLE);
         }
         case TT_STAR: {
             SBW_Value *v = ((*left->Value()) * right->Value());
-            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, 0);
+            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, VOID_MODIFIER);
         }
         case TT_STAREQ: {
             SBW_Value *v = ((*left->Value()) *= right->Value());
-            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, 0);
+            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, UNDISPLAYABLE);
         }
         case TT_POWER: {
             SBW_Value *v = left->Value()->operator_power(right->Value());
-            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, 0);
+            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, VOID_MODIFIER);
         }
         case TT_POWEREQ: {
             SBW_Value *v = left->Value()->operator_power_eq(right->Value());
-            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, 0);
+            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, UNDISPLAYABLE);
         }
         case TT_SLASH: {
             SBW_Value *v = ((*left->Value()) / right->Value());
-            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, 0);
+            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, VOID_MODIFIER);
         }
         case TT_SLASHEQ: {
             SBW_Value *v = ((*left->Value()) /= right->Value());
-            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, 0);
+            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, UNDISPLAYABLE);
         }
         case TT_PERCENT: {
             SBW_Value *v = (*left->Value()) % right->Value();
-            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, 0);
+            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, VOID_MODIFIER);
         }
         case TT_PERCENTEQ: {
             SBW_Value *v = (*left->Value()) %= right->Value();
-            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, 0);
+            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, UNDISPLAYABLE);
         }
         case TT_HAT: {
             SBW_Value *v = ((*left->Value()) ^ right->Value());
-            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, 0);
+            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, VOID_MODIFIER);
         }
         case TT_HATEQ: {
             SBW_Value *v = ((*left->Value()) ^= right->Value());
-            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, 0);
+            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, UNDISPLAYABLE);
         }
         case TT_AMP: {
             SBW_Value *v = ((*left->Value()) & right->Value());
-            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, 0);
+            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, VOID_MODIFIER);
         }
         case TT_AMPEQ: {
             SBW_Value *v = ((*left->Value()) &= right->Value());
-            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, 0);
+            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, UNDISPLAYABLE);
         }
         case TT_PIPE: {
             SBW_Value *v = ((*left->Value()) | right->Value());
-            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, 0);
+            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, VOID_MODIFIER);
         }
         case TT_PIPEEQ: {
             SBW_Value *v = ((*left->Value()) |= right->Value());
-            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, 0);
+            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, UNDISPLAYABLE);
         }
         case TT_LSHIFT: {
             SBW_Value *v = ((*left->Value()) << right->Value());
-            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, 0);
+            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, VOID_MODIFIER);
         }
         case TT_LSHIFTEQ: {
             SBW_Value *v = ((*left->Value()) <<= right->Value());
-            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, 0);
+            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, UNDISPLAYABLE);
         }
         case TT_RSHIFT: {
             SBW_Value *v = ((*left->Value()) >> right->Value());
-            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, 0);
+            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, VOID_MODIFIER);
         }
         case TT_RSHIFTEQ: {
             SBW_Value *v = ((*left->Value()) >>= right->Value());
-            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, 0);
+            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, UNDISPLAYABLE);
         }
         case TT_NE: {
             SBW_Value *v = ((*left->Value()) != right->Value());
-            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, 0);
+            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, VOID_MODIFIER);
         }
         case TT_EE: {
             SBW_Value *v = ((*left->Value()) == right->Value());
-            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, 0);
+            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, VOID_MODIFIER);
         }
         case TT_LESS: {
             SBW_Value *v = ((*left->Value()) < right->Value());
-            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, 0);
+            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, VOID_MODIFIER);
         }
         case TT_LESSEQ: {
             SBW_Value *v = ((*left->Value()) <= right->Value());
-            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, 0);
+            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, VOID_MODIFIER);
         }
         case TT_GREAT: {
             SBW_Value *v = ((*left->Value()) > right->Value());
-            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, 0);
+            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, VOID_MODIFIER);
         }
         case TT_GREATEQ: {
             SBW_Value *v = ((*left->Value()) >= right->Value());
-            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, 0);
+            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, VOID_MODIFIER);
         }
         case TT_AMPAMP: {
             SBW_Value *v = ((*left->Value()) && right->Value());
-            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, 0);
+            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, VOID_MODIFIER);
         }
         case TT_PIPEPIPE: {
             SBW_Value *v = ((*left->Value()) || right->Value());
-            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, 0);
+            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, VOID_MODIFIER);
+        }
+        case TT_EQ: {
+            SBW_Value *v = ((*left->Value()) = right->Value());
+            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, UNDISPLAYABLE);
         }
 
         default: return new SBW_Variable(new SBW_ValueError(L"OperatorError", L"Undefined binary operation", bn->Line(), bn->Column()), UNASSIGNABLE_ERROR);
@@ -331,31 +335,31 @@ SBW_Variable *SBW_Interpreter::InterpretUnaryExpression(SBW_Node *node)
     {
         case TT_PLUS: {
             SBW_Value *v = +(*operand->Value());
-            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, 0);
+            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, VOID_MODIFIER);
         }
         case TT_MINUS: {
             SBW_Value *v = -(*operand->Value());
-            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, 0);
+            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, VOID_MODIFIER);
         }
         case TT_NOT: {
             SBW_Value *v = !(*operand->Value());
-            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, 0);
+            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, VOID_MODIFIER);
         }
         case TT_TILDE: {
             SBW_Value *v = ~(*operand->Value());
-            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, 0);
+            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, VOID_MODIFIER);
         }
         case TT_DOLLAR: {
             SBW_Value *v = *(*operand->Value());
-            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, 0);
+            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, VOID_MODIFIER);
         }
         case TT_PLUSPLUS: {
             SBW_Value *v = ++(*operand->Value());
-            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, 0);
+            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, UNDISPLAYABLE);
         }
         case TT_MINUSMINUS: {
             SBW_Value *v = --(*operand->Value());
-            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, 0);
+            return v->Type() == VT_ERROR_ ? new SBW_Variable(v, UNASSIGNABLE_ERROR) : new SBW_Variable(v, UNDISPLAYABLE);
         }
 
         default: return new SBW_Variable(new SBW_ValueError(L"OperatorError", L"Undefined unary operation", un->Line(), un->Column()), UNASSIGNABLE_ERROR);
@@ -370,5 +374,5 @@ SBW_Variable *SBW_Interpreter::InterpretConvertExpression(SBW_Node *node)
         return operand;
     
     SBW_Value *val = operand->Value()->operator_convert(nc->DestType());
-    return val->Type() == VT_ERROR_ ? new SBW_Variable(val, UNASSIGNABLE_ERROR) : new SBW_Variable(val, 0);
+    return val->Type() == VT_ERROR_ ? new SBW_Variable(val, UNASSIGNABLE_ERROR) : new SBW_Variable(val, VOID_MODIFIER);
 }

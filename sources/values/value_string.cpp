@@ -17,7 +17,6 @@ SBW_Value *SBW_ValueString::AutoConvert(sbw_value_type dest_type)
     {
         switch (dest_type)
         {
-            case VT_BOOLEAN_: return new SBW_ValueBoolean(this->value.size() != 0);
             case VT_STRING_: return new SBW_ValueString(this->value);
 
             case VT_ANY_: return new SBW_ValueAny(new SBW_ValueString(this->value));
@@ -28,10 +27,9 @@ SBW_Value *SBW_ValueString::AutoConvert(sbw_value_type dest_type)
     {
         switch (dest_type)
         {
-            case VT_BOOLEAN_: return new SBW_ValueBoolean((sbw_bool*)0);
             case VT_STRING_: return new SBW_ValueString();
 
-            case VT_ANY_: return new SBW_ValueAny(new SBW_ValueNull());
+            case VT_ANY_: return new SBW_ValueAny(new SBW_ValueString());
             default: return this->AutoConvertionError(dest_type);
         }
     }
@@ -312,6 +310,7 @@ SBW_Value *SBW_ValueString::operator=(SBW_Value *val)
         }
         case VT_STRING_: {
             this->value = ((SBW_ValueString*)val)->Get();
+            return this;
         }
 
         case VT_ANY_: return *this = ((SBW_ValueAny*)val)->Get();
@@ -1086,7 +1085,7 @@ SBW_Value *SBW_ValueString::operator_convert(sbw_value_type dest_type)
             case VT_STRING_: return new SBW_ValueString();
             case VT_TYPE_: return new SBW_ValueType(VT_STRING_);
 
-            case VT_ANY_: return new SBW_ValueAny(new SBW_ValueNull());
+            case VT_ANY_: return new SBW_ValueAny(new SBW_ValueString());
             default: return this->ConvertionError(dest_type);
         }
     }

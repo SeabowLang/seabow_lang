@@ -4,6 +4,8 @@
 #include "parser.hpp"
 
 #define UNASSIGNABLE_ERROR  0xff
+#define UNDISPLAYABLE       0xfe
+#define VOID_MODIFIER       0x00
 
 class SBW_Variable 
 {

@@ -133,13 +133,6 @@ SBW_Node *SBW_Parser::ParseStatement(sbw_bool is_stat)
             node = this->ParseIncImp(true);
         else if (current->Text() == L"import")
             node = this->ParseIncImp(false);
-        else
-        {
-            sbw_token_type after = this->Get(1)->Type();
-            if (after == TT_EQ || after == TT_PLUSEQ || after == TT_MINUSEQ || after == TT_STAREQ || after == TT_SLASHEQ || after == TT_POWEREQ || after == TT_PERCENTEQ ||
-                after == TT_LSHIFTEQ || after == TT_RSHIFTEQ || after == TT_PIPEEQ || after == TT_AMPEQ || after == TT_HATEQ)
-            node = this->ParseVariableAssignment();
-        }
     }
 
     if (!node)
@@ -312,24 +305,6 @@ SBW_Node *SBW_Parser::ParseReturn(sbw_none)
     }
     
     return new SBW_NodeReturn(line, column, expr);
-}
-
-SBW_Node *SBW_Parser::ParseVariableAssignment(sbw_none)
-{
-    sbw_ulong line = this->Get()->Line();
-    sbw_ulong column = this->Get()->Column();
-    sbw_string name = this->Advance()->Text();
-    sbw_token_type eq_type = this->Get()->Type();
-    if (eq_type == TT_EQ)
-        this->Advance();
-    else
-        return this->Match(TT_EQ, L"equals character");
-
-    SBW_Node *value = this->ParseStatement(false);
-    if (value->Type() == NT_BAD)
-        return value;
-    
-    return new SBW_NodeVarAssign(line, column, name, eq_type, value);
 }
 
 SBW_Node *SBW_Parser::ParseIf(sbw_none)
