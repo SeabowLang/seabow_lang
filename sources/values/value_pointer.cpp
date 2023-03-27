@@ -41,6 +41,11 @@ SBW_Value *SBW_ValuePointer::AutoConvert(sbw_value_type dest_type)
     }
 }
 
+SBW_Value *SBW_ValuePointer::operator*(sbw_none) 
+{ 
+    return (this->ptr_type != VT_UNDEFINED_) ? (SBW_Value*)this->value : new SBW_Value(); 
+}
+
 SBW_Value *SBW_ValuePointer::operator_convert(sbw_value_type dest_type)
 {
     if (this->ptr_type != VT_NULL_)
@@ -74,3 +79,5 @@ SBW_Value *SBW_ValuePointer::operator_convert(sbw_value_type dest_type)
         }
     }
 }
+
+SBW_Value *SBW_ValuePointer::operator_abs(sbw_none) { return new SBW_ValuePointer(this->value, this->ptr_type); }

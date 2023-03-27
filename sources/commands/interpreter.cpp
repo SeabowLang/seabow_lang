@@ -1,4 +1,4 @@
-#include "compiler/interpreter.hpp"
+#include "commands/interpreter.hpp"
 
 SBW_Variable::SBW_Variable()
 {
@@ -18,9 +18,13 @@ SBW_Variable::~SBW_Variable()
         delete this->value;
 }
 
-SBW_Interpreter::SBW_Interpreter()
+SBW_Interpreter::SBW_Interpreter(SBW_Options *options)
 {
     this->statement = false;
+
+    /* Here could be an interpretation of seabow options */
+
+    delete options;
 }
 
 SBW_Interpreter::~SBW_Interpreter()
@@ -39,7 +43,9 @@ sbw_none SBW_Interpreter::Perform(sbw_none)
 
     while (true)
     {
-        wprintf((this->statement) ? L"... " : L">>> ");
+        if (this->statement) wprintf(L"... ");
+        else wprintf(L">>> ");
+
         sbw_string code;
         std::getline(std::wcin, code);
 

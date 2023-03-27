@@ -107,12 +107,6 @@ SBW_Node *SBW_Parser::ParseStatement(sbw_bool is_stat)
             sbw_ulong column = this->Advance()->Column();
             node = new SBW_NodeContinue(line, column);
         }
-        else if (current->Text() == L"null")
-        {
-            sbw_ulong line = this->Get()->Line();
-            sbw_ulong column = this->Advance()->Column();
-            node = new SBW_NodeLiteral(line, column, new SBW_ValueNull());
-        }
         else if (current->Text() == L"return")
             node = this->ParseReturn();
         else if (current->Text() == L"if")
@@ -784,6 +778,11 @@ SBW_Node *SBW_Parser::ParsePrimaryExpression(sbw_none)
 
         case TT_BOOLEAN: {
             return new SBW_NodeLiteral(line, column, new SBW_ValueBoolean(this->Advance()->Text() == L"true"));
+        }
+
+        case TT_NULL: {
+            this->Advance();
+            return new SBW_NodeLiteral(line, column, new SBW_ValueNull());
         }
 
         case TT_BAD: {

@@ -298,17 +298,16 @@ SBW_Value *SBW_ValueString::operator&=(SBW_Value *val)
 }
 
 SBW_Value *SBW_ValueString::operator=(SBW_Value *val)
-{
-    if (this->nl)
-        return this->OpWithNullError(L"=");
-    
+{   
     switch (val->Type())
     {
         case VT_CHARACTER_: {
+            this->nl = false;
             this->value = ((SBW_ValueCharacter*)val)->Get();
             return this;
         }
         case VT_STRING_: {
+            this->nl = false;
             this->value = ((SBW_ValueString*)val)->Get();
             return this;
         }
@@ -920,7 +919,12 @@ SBW_Value *SBW_ValueString::operator==(SBW_Value *val)
     
     switch (val->Type())
     {
-        case VT_STRING_: return new SBW_ValueBoolean(this->value == ((SBW_ValueString*)val)->Get());
+        case VT_STRING_: { 
+            if (val->IsNull())
+                return new SBW_ValueBoolean(false);
+
+            return new SBW_ValueBoolean(this->value == ((SBW_ValueString*)val)->Get());
+        }
 
         case VT_ANY_: return *this == ((SBW_ValueAny*)val)->Get();
         default: return new SBW_ValueBoolean(false);
@@ -1082,7 +1086,7 @@ SBW_Value *SBW_ValueString::operator_convert(sbw_value_type dest_type)
         switch (dest_type)
         {
             case VT_BOOLEAN_: return new SBW_ValueBoolean((sbw_bool*)0);
-            case VT_STRING_: return new SBW_ValueString();
+            case VT_STRING_: return new SBW_ValueString(L"null");
             case VT_TYPE_: return new SBW_ValueType(VT_STRING_);
 
             case VT_ANY_: return new SBW_ValueAny(new SBW_ValueString());

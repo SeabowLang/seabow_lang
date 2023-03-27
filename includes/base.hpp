@@ -8,7 +8,7 @@
 #define SEABOW_HELPS L"Welcome to Seabow helps!\n\tCompiler: seabow cmp <main_file> <other_arguments>\nThis will compile seabow files (.sbw) to seabow bytecode files (.sbb).\
 \n\n\tInterpreter: seabow <other_arguments>\nThis will open seabow interpreter in your terminal.\n\n\tVirtual Machine: seabow run <bytecode_file> <other_arguments>\n\
 This will interpret bytecode and perform it.\n\n/!\\ <other_arguments>: All seabow command arguments like: -opt, -o, -cmt, ...\n/!\\ <main_file>: seabow file (.sbw) \
-that contains main function.\n/!\\ <bytecode_file>: seabow bytecode file (.sbb) to perform.\n"
+that contains main function.\n/!\\ <bytecode_file>: seabow bytecode file (.sbb) to perform.\n\nFor more helps, go to seabow wiki: https://github.com/SeabowLang/seabow_lang/wiki/Command-Tutorial\n"
 
 // C standart libraries
 #include <math.h>
@@ -18,15 +18,19 @@ that contains main function.\n/!\\ <bytecode_file>: seabow bytecode file (.sbb) 
 #include <string>
 #include <iostream>
 #include <iomanip>
+#include <codecvt>
 
 #ifdef _WIN32
     #include <io.h>
     #include <fcntl.h>
     #define SEABOW_OS "windows"
+    #define SEABOW_LIB "dll"
 #elif __APPLE__
     #define SEABOW_OS "macos"
+    #define SEABOW_LIB "so"
 #else
     #define SEABOW_OS "linux"
+    #define SEABOW_LIB "so"
 #endif
 
 // Seabow types

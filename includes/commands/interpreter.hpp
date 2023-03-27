@@ -1,7 +1,7 @@
 #ifndef __SEABOW_INTERPRETER_HPP__
 #define __SEABOW_INTERPRETER_HPP__
 
-#include "parser.hpp"
+#include "commands/options.hpp"
 
 #define UNASSIGNABLE_ERROR  0xff
 #define UNDISPLAYABLE       0xfe
@@ -25,7 +25,7 @@ private:
 class SBW_Interpreter 
 {
 public:
-    SBW_Interpreter();
+    SBW_Interpreter(SBW_Options *options);
     virtual ~SBW_Interpreter();
 
     sbw_none Perform(sbw_none);

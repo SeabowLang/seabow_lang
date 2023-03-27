@@ -351,7 +351,9 @@ SBW_Token *SBW_Lexer::LexWord(sbw_none)
     sbw_token_type t = TT_WORD;
     if (txt == L"true" || txt == L"false")
         t = TT_BOOLEAN;
-    if (txt == L"in")
+    else if (txt == L"null")
+        t = TT_NULL;
+    else if (txt == L"in")
         t = TT_IN;
     else if (txt == L"is")
         t = TT_IS;

@@ -6,7 +6,7 @@
 enum sbw_token_type: sbw_ubyte {
     TT_BAD = 0xff, TT_EOF = 0xfe,
 
-    TT_IN = 0xfd, TT_IS = 0xfc, TT_AS = 0xfb,
+    TT_IN = 0xfd, TT_IS = 0xfc, TT_AS = 0xfb, TT_NULL = 0xfa,
 
     TT_WORD = 0x00, TT_CHAR = 0x01, TT_STRING = 0x02, TT_INTEGER = 0x03, TT_DECIMAL = 0x04, TT_BOOLEAN = 0x05,
 

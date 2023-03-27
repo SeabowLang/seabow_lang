@@ -15,8 +15,11 @@ public:
     inline sbw_value_type PtrType(sbw_none) const { return this->ptr_type; }
     SBW_Value *AutoConvert(sbw_value_type dest_type);
     inline sbw_bool IsNull(sbw_none) const { return this->ptr_type == VT_NULL_; }
-    
+
+    SBW_Value *operator*(sbw_none);
+
     SBW_Value *operator_convert(sbw_value_type dest_type);
+    SBW_Value *operator_abs(sbw_none);
 private:
     sbw_none *value;
     sbw_value_type ptr_type;

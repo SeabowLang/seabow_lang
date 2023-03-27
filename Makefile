@@ -1,4 +1,4 @@
-SRC_PATHS	= sources/*.cpp sources/nodes/*.cpp sources/values/*.cpp sources/compiler/interpreter.cpp
+SRC_PATHS	= sources/*.cpp sources/nodes/*.cpp sources/values/*.cpp sources/commands/*.cpp
 INC_PATHS	= -Iincludes
 DST_PATH	= build
 CMM_CMDS	= -O3 -Wall -Wno-sign-compare -Wno-string-plus-int

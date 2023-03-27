@@ -1,4 +1,4 @@
-#include "compiler/interpreter.hpp"
+#include "commands/virtual_machine.hpp"
 
 void show_compound_infos(std::vector<SBW_Node*> nodes);
 
@@ -13,14 +13,48 @@ int main(int argc, char **argv)
 
     if (argc <= 1 || (argv[1][0] == '-' && argv[1][1] != '-')) 
     {
-        SBW_Interpreter *interpreter = new SBW_Interpreter();
-        interpreter->Perform();
+        SBW_Options *options = new SBW_Options(argv, argc, 1);
+        if (options->ErrorOccured())
+        {
+            delete options;
+            return -1;
+        }
 
+        SBW_Interpreter *interpreter = new SBW_Interpreter(options);
+        interpreter->Perform();
         delete interpreter;
     }
     else
     {
-        if (string_equals(argv[1], "help") || string_equals(argv[1], "--help"))
+        if (string_equals(argv[1], "cmp"))
+        {
+            SBW_Options *options = new SBW_Options(argv, argc, 2);
+            if (options->ErrorOccured())
+            {
+                delete options;
+                return -1;
+            }
+
+            SBW_Compiler *compiler = new SBW_Compiler(options);
+            // TODO: Implement compiler utilities
+            delete compiler;
+        }
+        else if (string_equals(argv[1], "run"))
+        {
+            SBW_Options *options = new SBW_Options(argv, argc, 2);
+            if (options->ErrorOccured())
+            {
+                delete options;
+                return -1;
+            }
+
+            SBW_VirtualMachine *vm = new SBW_VirtualMachine(options);
+            // TODO: Implement virtual machine utilities
+            delete vm;
+        }
+        else if (string_equals(argv[1], "pack"))
+            wprintf(L"/!\\ Seabow's option 'pack' is not yet implemented.\n"); // TODO: Implement 'pack' option
+        else if (string_equals(argv[1], "help") || string_equals(argv[1], "--help"))
             wprintf(SEABOW_HELPS);
         else if (string_equals(argv[1], "license") || string_equals(argv[1], "--l"))
             wprintf(L"GPL-3.0+\nAll releases and libraries of seabow are open source. You can find it at https://github.com/orgs/SeabowLang/repositories.\n");
