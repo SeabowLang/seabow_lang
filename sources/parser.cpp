@@ -65,7 +65,7 @@ SBW_Token *SBW_Parser::Get(sbw_long offset)
     if (index < this->size)
         return this->tokens[index];
     
-    return this->tokens.back();
+    return this->tokens[this->size];
 }
 
 SBW_NodeBad *SBW_Parser::Match(sbw_token_type tt, sbw_string t_txt)
@@ -88,7 +88,8 @@ SBW_Node *SBW_Parser::ParseStatement(sbw_bool is_stat)
         return this->ParseCompound();
     else if (current->Type() == TT_WORD)
     {
-        if (GetKeywordType(current->Text()) < VT_NULL_)
+        sbw_ubyte t = GetKeywordType(current->Text());
+        if (t < VT_NULL_)
         {
             if (this->Get(1)->Type() != TT_LPAR)
                 node = this->ParseDeclaration();
@@ -188,14 +189,28 @@ SBW_Node *SBW_Parser::ParseDeclaration(sbw_none)
     sbw_ulong line = this->Get()->Line();
     sbw_ulong column = this->Get()->Column();
     sbw_value_type decl_type = GetKeywordType(this->Advance()->Text());
-    SBW_Token *name_tok = this->Get();
-    if (name_tok->Type() != TT_WORD)
-        return this->Match(TT_WORD, L"declaration name");
     
     switch (decl_type)
     {
-        case VT_ARRAY_: {}
-        case VT_LIST_: {}
+        case VT_ARRAY_: {
+            if (this->Get()->Type() != TT_LESS)
+                return this->Match(TT_LESS, L"capacity declaration (i.e. array<capacity>)");
+            
+            this->Advance(); // Skip '<'
+            SBW_Node *cap = this->ParseStatement(false);
+            if (cap->Type() == NT_BAD)
+                return cap;
+            
+            if (this->Get()->Type() != TT_GREAT)
+                return this->Match(TT_GREAT, L">");
+            this->Advance(); // Skip '>'
+
+            SBW_Token *name_tok = this->Get();
+            if (name_tok->Type() != TT_WORD)
+                return this->Match(TT_WORD, L"declaration name");
+            
+            this->Advance();
+        }
         case VT_DICT_: {}
 
         case VT_ENUMERATION_: {}
@@ -203,16 +218,19 @@ SBW_Node *SBW_Parser::ParseDeclaration(sbw_none)
         case VT_CLASS_: {}
 
         default: {
+            SBW_Token *name_tok = this->Get();
+            if (name_tok->Type() != TT_WORD)
+                return this->Match(TT_WORD, L"declaration name");
+
             this->Advance();
             if (this->Get()->Type() == TT_LPAR)
                 return this->ParseFunctionDeclaration(line, column, decl_type, name_tok->Text());
             
             if (decl_type == VT_VOID_)
                 return new SBW_NodeBad(line, column, new SBW_ValueError(L"SyntaxError", L"Cannot define a void variable", line, column));
-
             return this->ParseVariableDeclaration(line, column, decl_type, name_tok->Text());
         }
-    }
+    }    
 }
 
 SBW_Node *SBW_Parser::ParseFunctionDeclaration(sbw_ulong line, sbw_ulong column, sbw_value_type decl_type, sbw_string name)
@@ -251,6 +269,7 @@ SBW_Node *SBW_Parser::ParseFunctionDeclaration(sbw_ulong line, sbw_ulong column,
 
 SBW_Node *SBW_Parser::ParseVariableDeclaration(sbw_ulong line, sbw_ulong column, sbw_value_type decl_type, sbw_string name)
 {
+
     if (this->Get()->Type() != TT_EQ)
         return new SBW_NodeVarDecl(line, column, decl_type, name, (SBW_Node*)0);
     
@@ -305,6 +324,7 @@ SBW_Node *SBW_Parser::ParseIf(sbw_none)
 {
     sbw_ulong line = this->Get()->Line();
     sbw_ulong column = this->Advance()->Column();
+    sbw_bool rbrace = false;
     SBW_NodeBad *err = this->Match(TT_LPAR, L"(");
     if (err)
         return err;
@@ -317,14 +337,22 @@ SBW_Node *SBW_Parser::ParseIf(sbw_none)
     if (err)
         return err;
     
+    if (this->Get()->Type() == TT_LBRACE)
+        rbrace = true;
+    
     SBW_Node *body = this->ParseStatement(false);
     if (body->Type() == NT_BAD)
         return body;
     
     std::vector<SBW_Node*> elif_clauses;
-    while (this->Get(1)->Text() == L"elif")
+    if (this->Get()->Type() == TT_RBRACE && rbrace)
     {
-        this->Advance(); // Skip '}'
+        this->Advance();
+        rbrace = false;
+    }
+
+    while (this->Get()->Text() == L"elif")
+    {
         SBW_Node *elif_clause = this->ParseElif();
         if (elif_clause->Type() == NT_BAD)
         {
@@ -336,13 +364,18 @@ SBW_Node *SBW_Parser::ParseIf(sbw_none)
     }
 
     SBW_Node *else_body = (SBW_Node*)0;
-    if (this->Get(1)->Text() == L"else")
+    if (this->Get()->Text() == L"else")
     {
-        this->Advance(); // Skip '}'
         this->Advance(); // Skip 'else'
+        if (this->Get()->Type() == TT_LBRACE)
+            rbrace = true;
+
         else_body = this->ParseStatement(false);
         if (else_body->Type() == NT_BAD)
             return else_body;
+
+        if (this->Get()->Type() == TT_RBRACE && rbrace)
+            this->Advance();
     }
 
     return new SBW_NodeIf(line, column, condition, body, else_body, elif_clauses);
@@ -361,10 +394,17 @@ SBW_Node *SBW_Parser::ParseElif(sbw_none)
     if (err)
         return err;
     
+    sbw_bool rbrace = false;
+    if (this->Get()->Type() == TT_LBRACE)
+        rbrace = true;
+
     SBW_Node *body = this->ParseStatement(false);
     if (body->Type() == NT_BAD)
         return body;
     
+    if (this->Get()->Type() == TT_RBRACE && rbrace)
+        this->Advance();
+
     return new SBW_NodeElif(line, column, condition, body);
 }
 
@@ -495,6 +535,7 @@ SBW_Node *SBW_Parser::ParseFor(sbw_none)
 {
     sbw_ulong line = this->Get()->Line();
     sbw_ulong column = this->Advance()->Column();
+    sbw_bool rbrace = false;
     SBW_NodeBad *err = this->Match(TT_LPAR, L"(");
     if (err)
         return err;
@@ -502,8 +543,6 @@ SBW_Node *SBW_Parser::ParseFor(sbw_none)
     SBW_Node *loop_val = this->ParseStatement(false);
     if (loop_val->Type() == NT_BAD)
         return loop_val;
-    else if (loop_val->Type() != NT_VARIABLE_DECLARATION && loop_val->Type() != NT_VARIABLE_ASSIGNMENT && loop_val->Type() != NT_VARIABLE_CALL)
-        return new SBW_NodeBad(loop_val->Line(), loop_val->Column(), new SBW_ValueError(L"SyntaxError", L"A variable is expected", loop_val->Line(), loop_val->Column()));
     
     err = this->Match(TT_SEMI, L";");
     if (err)
@@ -525,9 +564,15 @@ SBW_Node *SBW_Parser::ParseFor(sbw_none)
     if (err)
         return err;
     
+    if (this->Get()->Type() == TT_LBRACE)
+        rbrace = true;
+    
     SBW_Node *body = this->ParseStatement(false);
     if (body->Type() == NT_BAD)
         return body;
+    
+    if (this->Get()->Type() == TT_RBRACE && rbrace)
+        this->Advance();
     
     return new SBW_NodeFor(line, column, loop_val, loop_condition, loop_expr, body);
 }
@@ -536,6 +581,7 @@ SBW_Node *SBW_Parser::ParseForeach(sbw_none)
 {
     sbw_ulong line = this->Get()->Line();
     sbw_ulong column = this->Advance()->Column();
+    sbw_bool rbrace = false;
     SBW_NodeBad *err = this->Match(TT_LPAR, L"(");
     if (err)
         return err;
@@ -558,9 +604,15 @@ SBW_Node *SBW_Parser::ParseForeach(sbw_none)
     if (err)
         return err;
     
+    if (this->Get()->Type() == TT_LBRACE)
+        rbrace = true;
+
     SBW_Node *body = this->ParseStatement(false);
     if (body->Type() == NT_BAD)
         return body;
+    
+    if (this->Get()->Type() == TT_RBRACE && rbrace)
+        this->Advance();
     
     return new SBW_NodeForeach(line, column, loop_val, loop_container, body);
 }
@@ -569,6 +621,7 @@ SBW_Node *SBW_Parser::ParseWhile(sbw_none)
 {
     sbw_ulong line = this->Get()->Line();
     sbw_ulong column = this->Advance()->Column();
+    sbw_bool rbrace = false;
     SBW_NodeBad *err = this->Match(TT_LPAR, L"(");
     if (err)
         return err;
@@ -581,9 +634,15 @@ SBW_Node *SBW_Parser::ParseWhile(sbw_none)
     if (err)
         return err;
     
+    if (this->Get()->Type() == TT_LBRACE)
+        rbrace = true;
+    
     SBW_Node *body = this->ParseStatement(false);
     if (body->Type() == NT_BAD)
         return body;
+    
+    if (this->Get()->Type() == TT_RBRACE && rbrace)
+        this->Advance();
     
     return new SBW_NodeWhile(line, column, condition, body);
 }
@@ -592,11 +651,14 @@ SBW_Node *SBW_Parser::ParseDowhile(sbw_none)
 {
     sbw_ulong line = this->Get()->Line();
     sbw_ulong column = this->Advance()->Column();
+    sbw_bool rbrace = (this->Get()->Type() == TT_LBRACE);
     SBW_Node *body = this->ParseStatement(false);
     if (body->Type() == NT_BAD)
         return body;
     
-    this->Advance(); // Skip ';' or '}'
+    if (this->Get()->Type() == TT_RBRACE && rbrace)
+        this->Advance();
+    
     if (this->Get()->Text() != L"while")
         return new SBW_NodeBad(this->Get()->Line(), this->Get()->Column(), new SBW_ValueError(L"SyntaxError", L"'while' keyword is expected", this->Get()->Line(), this->Get()->Column()));
     
@@ -758,6 +820,37 @@ SBW_Node *SBW_Parser::ParsePrimaryExpression(sbw_none)
                 return err;
             
             return new SBW_NodeParenthesized(line, column, expression);
+        }
+
+        case TT_LBRACKET: {
+            sbw_ulong line = this->Get()->Line();
+            sbw_ulong column = this->Advance()->Column();
+            std::vector<SBW_Node*> values;
+            if (this->Get()->Type() == TT_RBRACKET)
+            {
+                this->Advance();
+                return new SBW_NodeArray(line, column, values);
+            }
+
+            SBW_Node *current = this->ParseStatement(false);
+            if (current->Type() == NT_BAD)
+                return current;
+            
+            values.push_back(current);
+            while (this->Get()->Type() == TT_COMMA)
+            {
+                this->Advance(); // Skip ','
+                current = this->ParseStatement(false);
+                if (current->Type() == NT_BAD)
+                    return current;
+                values.push_back(current);
+            }
+
+            if (this->Get()->Type() != TT_RBRACKET)
+                return this->Match(TT_RBRACKET, L"]");
+            this->Advance(); // Skip ']'
+
+            return new SBW_NodeArray(line, column, values);
         }
 
         case TT_INTEGER: {

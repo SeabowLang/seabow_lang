@@ -48,7 +48,7 @@ SBW_Value *SBW_ValueType::operator_convert(sbw_value_type dest_type)
             case VT_STRING_: {
                 sbw_string s = L"<"; s += GetStringType(this->value);
                 if (this->more.size() > 0)
-                    s += L"'" + this->more + L"'";
+                    s += L"[" + this->more + L"]";
                 s += L">";
                 return new SBW_ValueString(s);
             }

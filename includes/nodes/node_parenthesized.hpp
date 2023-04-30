@@ -1,7 +1,7 @@
 #ifndef __SEABOW_NODE_PARENTHESIZED_HPP__
 #define __SEABOW_NODE_PARENTHESIZED_HPP__
 
-#include "nodes/node_literal.hpp"
+#include "nodes/node_array.hpp"
 
 class SBW_NodeParenthesized: public SBW_Node
 {

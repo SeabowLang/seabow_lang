@@ -17,7 +17,8 @@ SBW_Value *SBW_ValueError::operator_convert(sbw_value_type dest_type)
             case VT_BOOLEAN_: return new SBW_ValueBoolean(true);
             case VT_STRING_: {
                 if (this->name.size() > 0) {
-                    sbw_string s = this->name + L": " + this->details + L" (line: "; s += std::to_wstring(this->line) + L", column: " + std::to_wstring(this->column); s += L")";
+                    sbw_string s = this->name + L": " + this->details;
+                    if (this->line != 0) { s += L" (line: "; s += std::to_wstring(this->line) + L", column: " + std::to_wstring(this->column); s += L")"; }
                     return new SBW_ValueString(s);
                 } else return new SBW_ValueString(L"null");
             }

@@ -18,7 +18,7 @@ enum sbw_value_type: sbw_ubyte {
 
     VT_ENUMERATION_ = 0x30, VT_STRUCTURE_ = 0x31, VT_CLASS_ = 0x32,
 
-    VT_FUNCTION_ = 0x40,
+    VT_FUNCTION_ = 0x40, VT_EXTERN_FUNCTION_ = 0x41,
 
     VT_ERROR_ = 0x50
 };

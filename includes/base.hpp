@@ -19,6 +19,7 @@ that contains main function.\n/!\\ <bytecode_file>: seabow bytecode file (.sbb) 
 #include <iostream>
 #include <iomanip>
 #include <codecvt>
+#include <thread>
 
 #ifdef _WIN32
     #include <io.h>

@@ -4,6 +4,7 @@ void show_compound_infos(std::vector<SBW_Node*> nodes);
 
 int main(int argc, char **argv)
 {
+    sbw_int ret_val = 0;
     #ifndef _WIN32
         std::setlocale(LC_ALL, "C.UTF-8");
     #else
@@ -36,7 +37,13 @@ int main(int argc, char **argv)
             }
 
             SBW_Compiler *compiler = new SBW_Compiler(options);
-            // TODO: Implement compiler utilities
+            if (compiler->ErrorOccured())
+            {
+                delete compiler;
+                return -1;
+            }
+
+            compiler->Perform();
             delete compiler;
         }
         else if (string_equals(argv[1], "run"))
@@ -49,7 +56,7 @@ int main(int argc, char **argv)
             }
 
             SBW_VirtualMachine *vm = new SBW_VirtualMachine(options);
-            // TODO: Implement virtual machine utilities
+            ret_val = vm->Perform();
             delete vm;
         }
         else if (string_equals(argv[1], "pack"))
@@ -95,7 +102,7 @@ int main(int argc, char **argv)
         }
     }
 
-    return 0;
+    return ret_val;
 }
 
 void show_compound_infos(std::vector<SBW_Node*> nodes)

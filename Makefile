@@ -36,7 +36,7 @@ cmp-w:
 	x86_64-w64-mingw32-g++-posix -D_WIN32=1 $(SRC_PATHS) $(INC_PATHS) -o $(DST_PATH)/windows/$(OUTPUT).exe $(CMM_CMDS) -static-libgcc -static-libstdc++ -static -lwinpthread
 
 cmp-m:
-	clang++ -D__APPLE__=1 $(SRC_PATHS) $(INC_PATHS) -o $(DST_PATH)/macos/$(OUTPUT) $(CMM_CMDS)
+	clang++ -D__APPLE__=1 $(SRC_PATHS) $(INC_PATHS) -o $(DST_PATH)/macos/$(OUTPUT) $(CMM_CMDS) -Wno-return-stack-address
 
 cmp-all:
 	$(MAKE) cmp-l cmp-w cmp-m

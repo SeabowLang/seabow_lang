@@ -13,6 +13,7 @@ public:
     inline sbw_value_type Type(sbw_none) const { return VT_ARRAY_; }
 
     inline SBW_Value **Get(sbw_none) const { return this->value; }
+    SBW_Value *AutoConvert(sbw_value_type dest_type);
     inline sbw_ulong Size(sbw_none) const { return this->size; }
     inline sbw_ulong FreeSpace(sbw_none) const { return this->free_space; }
     inline sbw_none SetFreeSpace(sbw_ulong ns) { this->free_space = ns; }
@@ -23,6 +24,8 @@ public:
 
     SBW_Value *operator-(SBW_Value *val);
     SBW_Value *operator-=(SBW_Value *val);
+
+    SBW_Value *operator_convert(sbw_value_type dest_type);
 private:
     SBW_Value **value;
     sbw_ulong size;
